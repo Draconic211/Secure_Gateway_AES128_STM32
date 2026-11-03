@@ -29,7 +29,7 @@ flowchart TD
         D2 --> D3["Đo khôi phục TCP (n=20),<br/>Mất khung 5-50% & Bền 1 giờ"]
     end
 
-    subgraph G5["Giai đoạn 5: Nghiệm thu mã nguồn (16/11 - 20/11)"]
+    subgraph G5["Giai đoạn 5: Nghiệm thu mã nguồn"]
         E1["Nghiệm thu 16 mục SW-STD-001<br/>cppcheck + clang-format + deviations"]
     end
 
