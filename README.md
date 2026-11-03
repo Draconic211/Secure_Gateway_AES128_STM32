@@ -5,56 +5,55 @@
 Quy trình phát triển và hoàn thiện hệ thống gồm 5 giai đoạn tuần tự: chuẩn hóa cấu trúc, kiểm thử dịch vụ trên PC, tích hợp BSP & FreeRTOS, đo kiểm thực nghiệm và nghiệm thu mã nguồn.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif', 'fontSize': '13px' }}}%%
 flowchart TD
     %% =============================================================
-    %% STYLING / PALETTE (Tối ưu Dark/Light Mode)
+    %% BẢNG MÀU TƯƠNG PHẢN CAO - DỄ ĐỌC TRÊN GITHUB
     %% =============================================================
-    classDef stepClass      fill:#F8FAFC,stroke:#334155,stroke-width:1.2px,color:#0F172A;
-    classDef highlightClass fill:#EFF6FF,stroke:#2563EB,stroke-width:1.5px,color:#1E3A8A;
-    classDef finalizeClass  fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B;
+    classDef default font-size:12px,color:#0F172A;
+    classDef stepClass      fill:#F1F5F9,stroke:#475569,stroke-width:2px,color:#0F172A,font-weight:500;
+    classDef highlightClass fill:#DBEAFE,stroke:#1D4ED8,stroke-width:2px,color:#1E3A8A,font-weight:600;
+    classDef finalizeClass  fill:#DCFCE7,stroke:#15803D,stroke-width:2px,color:#14532D,font-weight:600;
 
     %% =============================================================
-    %% CÁC GIAI ĐOẠN TRIỂN KHAI (DÀN HÀNG NGANG BÊN TRONG MỖI PHASE)
+    %% CÁC GIAI ĐOẠN (HÀNG NGANG)
     %% =============================================================
-    subgraph G1["Phase 1: Khởi tạo & Chuẩn hóa cấu trúc"]
+    subgraph G1[" Phase 1: Khởi tạo & Chuẩn hóa cấu trúc "]
         direction LR
-        A1["Cấu hình CubeMX (.ioc)<br/>• SPI1/2, DMA, EXTI, IWDG, FreeRTOS"] --> A2["Dựng cây thư mục SW-STD-001<br/>• App, BSP, Services, Tasks, Common, Config"]
-        A2 --> A3["Thiết lập công cụ chuẩn hóa<br/>• .clang-format, .gitignore, GCC Warnings"]
+        A1["<b>Cấu hình CubeMX (.ioc)</b><br/>SPI1/2, DMA, EXTI, IWDG, FreeRTOS"] --> A2["<b>Dựng cây thư mục SW-STD-001</b><br/>App, BSP, Services, Tasks, Common, Config"]
+        A2 --> A3["<b>Thiết lập công cụ</b><br/>.clang-format, .gitignore, GCC Warnings"]
     end
 
-    subgraph G2["Phase 2: Tầng Services & Unit Test trên PC"]
+    subgraph G2[" Phase 2: Tầng Services & Unit Test PC "]
         direction LR
-        B1["Triển khai buffer_pool.c/.h<br/>• 10 Static Buffers x 550B"] --> B2["Triển khai crypto_service & frame_codec<br/>• PKCS#7, xorshift32 IV, AES-128-CBC"]
-        B2 --> B3["Chạy Unit Test trên PC (MinGW)<br/>• Đối chiếu tính đúng đắn với PyCryptodome"]
+        B1["<b>Triển khai buffer_pool</b><br/>10 Static Buffers x 550B"] --> B2["<b>Triển khai crypto & frame</b><br/>PKCS#7, xorshift32 IV, AES-128-CBC"]
+        B2 --> B3["<b>Unit Test trên PC (MinGW)</b><br/>Đối chiếu PyCryptodome"]
     end
 
-    subgraph G3["Phase 3: Tầng BSP & Tích hợp FreeRTOS"]
+    subgraph G3[" Phase 3: Tầng BSP & Tích hợp FreeRTOS "]
         direction LR
-        C1["Triển khai bsp_spi, bsp_w5500, bsp_dwt<br/>• SPI DMA, s_wiz_mutex, Backup Socket"] --> C2["Tạo 5 Tasks cấp phát tĩnh<br/>• RX_A, RX_B, Crypto, TX, Heartbeat"]
-        C2 --> C3["Ghép nối 2 module W5500<br/>• Kiểm thử truyền nhận mã hóa 2 chiều"]
+        C1["<b>Triển khai bsp ngoại vi</b><br/>SPI DMA, s_wiz_mutex, Backup Socket"] --> C2["<b>Tạo 5 Tasks cấp phát tĩnh</b><br/>RX_A, RX_B, Crypto, TX, Heartbeat"]
+        C2 --> C3["<b>Ghép nối 2x W5500</b><br/>Kiểm thử mã hóa 2 chiều"]
     end
 
-    subgraph G4["Phase 4: Thực nghiệm & Đo kiểm"]
+    subgraph G4[" Phase 4: Thực nghiệm & Đo kiểm "]
         direction LR
-        D1["Đo thời gian mã hóa DWT<br/>• Khảo sát Payload 64B, 128B, 256B, 512B"] --> D2["Đo thông lượng TCP & UDP<br/>• Tốc độ 50 gói/giây + Giám sát Wireshark"]
-        D2 --> D3["Đo độ tin cậy đường truyền<br/>• Phục hồi TCP (n=20), Mất khung 5-50%, Bền 1h"]
+        D1["<b>Đo thời gian mã hóa DWT</b><br/>Payload 64B, 128B, 256B, 512B"] --> D2["<b>Đo thông lượng TCP & UDP</b><br/>50 gói/s + Wireshark"]
+        D2 --> D3["<b>Đo độ tin cậy kết nối</b><br/>Mất khung 5-50%, Bền 1h"]
     end
 
-    subgraph G5["Phase 5: Nghiệm thu mã nguồn"]
+    subgraph G5[" Phase 5: Nghiệm thu mã nguồn "]
         direction LR
-        E1["Nghiệm thu 16 tiêu chí SW-STD-001<br/>• Static Analysis (cppcheck)<br/>• Formatting (clang-format)<br/>• Danh mục giải trình ngoại lệ (Deviations)"]
+        E1["<b>Nghiệm thu 16 tiêu chí SW-STD-001</b><br/>cppcheck (Static Analysis) • clang-format • Giải trình sai lệch (Deviations)"]
     end
 
     %% =============================================================
-    %% LIÊN KẾT TUẦN TỰ GIỮA CÁC GIAI ĐOẠN
+    %% LIÊN KẾT TUẦN TỰ
     %% =============================================================
-    G1 -->|"Hoàn tất Base Project"| G2
-    G2 -->|"Services được kiểm chứng"| G3
-    G3 -->|"Hệ thống tích hợp ổn định"| G4
-    G4 -->|"Số liệu đo đạt chuẩn"| G5
+    G1 ==> G2 ==> G3 ==> G4 ==> G5
 
     %% =============================================================
-    %% GÁN CLASS STYLE
+    %% ÁP DỤNG STYLE
     %% =============================================================
     class A1,A2,A3,B1,B2,C1,C2 stepClass;
     class B3,C3,D1,D2,D3 highlightClass;
@@ -68,36 +67,42 @@ flowchart TD
 Kiến trúc hệ thống được phân lớp nghiêm ngặt, sử dụng 100% bộ nhớ tĩnh và giao tiếp luồng dữ liệu an toàn qua hàng đợi FreeRTOS giữa 2 giao diện mạng W5500.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif', 'fontSize': '13px' }}}%%
 flowchart TB
-    classDef taskClass    fill:#EBF3FB,stroke:#1E40AF,stroke-width:1.5px,color:#0F172A;
-    classDef serviceClass fill:#ECFDF5,stroke:#047857,stroke-width:1.5px,color:#064E3B;
-    classDef bspClass     fill:#FFFBEB,stroke:#B45309,stroke-width:1.5px,color:#78350F;
+    %% =============================================================
+    %% BẢNG MÀU PHÂN LỚP
+    %% =============================================================
+    classDef default font-size:12px,color:#0F172A;
+    classDef taskClass    fill:#E0F2FE,stroke:#0369A1,stroke-width:2px,color:#0C4A6E,font-weight:500;
+    classDef serviceClass fill:#DCFCE7,stroke:#15803D,stroke-width:2px,color:#14532D,font-weight:500;
+    classDef bspClass     fill:#FEF3C7,stroke:#B45309,stroke-width:2px,color:#78350F,font-weight:500;
+    classDef hwClass      fill:#F1F5F9,stroke:#475569,stroke-width:2px,color:#0F172A,font-weight:500;
 
-    subgraph L1["Layer 1: FreeRTOS Tasks & IPC (App/ & Tasks/)"]
-        RXA["rx_net_a_task<br/>(Prio 4, Stack 256W)"]
-        RXB["rx_net_b_task<br/>(Prio 4, Stack 256W)"]
-        QRX[["s_rx_queue<br/>(Static Queue)"]]
-        CRYPTO["crypto_task<br/>(Prio 2, Stack 512W)"]
-        QTX[["s_tx_queue<br/>(Static Queue)"]]
-        TX["tx_task<br/>(Prio 3, Stack 256W)"]
-        HB["heartbeat_task<br/>(Prio 1, Stack 192W)"]
+    subgraph L1[" Layer 1: FreeRTOS Tasks & IPC (App/ & Tasks/) "]
+        RXA["<b>rx_net_a_task</b><br/>(Prio 4, Stack 256W)"]
+        RXB["<b>rx_net_b_task</b><br/>(Prio 4, Stack 256W)"]
+        QRX[["<b>s_rx_queue</b><br/>(Static Queue)"]]
+        CRYPTO["<b>crypto_task</b><br/>(Prio 2, Stack 512W)"]
+        QTX[["<b>s_tx_queue</b><br/>(Static Queue)"]]
+        TX["<b>tx_task</b><br/>(Prio 3, Stack 256W)"]
+        HB["<b>heartbeat_task</b><br/>(Prio 1, Stack 192W)"]
     end
 
-    subgraph L2["Layer 2: Functional Services (Services/ & Common/)"]
-        POOL[("buffer_pool<br/>(10 x 550B Static Pool)")]
-        CS["crypto_service<br/>(PKCS#7, xorshift32, AES-128-CBC)"]
-        CODEC["frame_codec<br/>([len][IV 16B][ciphertext])"]
+    subgraph L2[" Layer 2: Functional Services (Services/ & Common/) "]
+        POOL[("<b>buffer_pool</b><br/>(10 x 550B Static Pool)")]
+        CS["<b>crypto_service</b><br/>(PKCS#7, xorshift32, AES-128-CBC)"]
+        CODEC["<b>frame_codec</b><br/>([len][IV 16B][ciphertext])"]
     end
 
-    subgraph L3["Layer 3: Board Support Package (BSP/)"]
-        WIZ["bsp_w5500<br/>(Dual W5500, s_wiz_mutex, Backup Socket)"]
-        SPI["bsp_spi<br/>(SPI1 / SPI2 DMA Wrapper)"]
-        DIAG["bsp_dwt & bsp_watchdog<br/>(DWT Cycle Counter, IWDG 500ms)"]
+    subgraph L3[" Layer 3: Board Support Package (BSP/) "]
+        WIZ["<b>bsp_w5500</b><br/>(Dual W5500, s_wiz_mutex, Backup Socket)"]
+        SPI["<b>bsp_spi</b><br/>(SPI1 / SPI2 DMA Wrapper)"]
+        DIAG["<b>bsp_dwt & bsp_watchdog</b><br/>(DWT Cycle Counter, IWDG 500ms)"]
     end
 
-    subgraph L4["Layer 4: Vendor Drivers & Hardware"]
-        HAL["Vendor HAL & Middlewares<br/>(STM32F1xx HAL, FreeRTOS, ioLibrary, tiny-AES)"]
-        HW["Hardware Layer<br/>(STM32F103C8T6 MCU, Dual W5500 Modules)"]
+    subgraph L4[" Layer 4: Vendor Drivers & Hardware "]
+        HAL["<b>Vendor HAL & Middlewares</b><br/>STM32F1xx HAL, FreeRTOS, ioLibrary, tiny-AES"]
+        HW["<b>Hardware Platform</b><br/>STM32F103C8T6 MCU + Dual WIZnet W5500"]
     end
 
     RXA & RXB -->|"Post buffer desc"| QRX
@@ -113,15 +118,16 @@ flowchart TB
 
     RXA & RXB -->|"Read socket"| WIZ
     TX -->|"Write socket"| WIZ
-    HB -->|"Kick dog / DWT read"| DIAG
+    HB -->|"Kick dog / Read DWT"| DIAG
 
-    WIZ -->|"SPI DMA Transfer"| SPI
+    WIZ -->|"SPI DMA"| SPI
     SPI & DIAG -->|"HAL Drivers"| HAL
     HAL -->|"Physical Interface"| HW
 
     class RXA,RXB,QRX,CRYPTO,QTX,TX,HB taskClass;
     class POOL,CS,CODEC serviceClass;
-    class WIZ,SPI,DIAG,HAL,HW bspClass;
+    class WIZ,SPI,DIAG bspClass;
+    class HAL,HW hwClass;
 ```
 
 ---
