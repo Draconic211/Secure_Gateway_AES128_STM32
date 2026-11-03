@@ -2,7 +2,7 @@
 
 ## 1. Development Workflow
 
-Quy trình phát triển và hoàn thiện hệ thống gồm 5 giai đoạn tuần tự[cite: 1]: chuẩn hóa cấu trúc[cite: 1], kiểm thử dịch vụ trên PC[cite: 1], tích hợp BSP & FreeRTOS[cite: 1], đo kiểm thực nghiệm[cite: 1] và nghiệm thu mã nguồn[cite: 1].
+Quy trình phát triển và hoàn thiện hệ thống gồm 5 giai đoạn tuần tự: chuẩn hóa cấu trúc, kiểm thử dịch vụ trên PC, tích hợp BSP & FreeRTOS, đo kiểm thực nghiệm và nghiệm thu mã nguồn.
 
 ```mermaid
 flowchart TD
@@ -53,7 +53,7 @@ flowchart TD
 
 ## 2. System Architecture
 
-Kiến trúc hệ thống được phân lớp nghiêm ngặt, sử dụng 100% bộ nhớ tĩnh và giao tiếp luồng dữ liệu an toàn qua hàng đợi FreeRTOS giữa 2 giao diện mạng W5500[cite: 1].
+Kiến trúc hệ thống được phân lớp nghiêm ngặt, sử dụng 100% bộ nhớ tĩnh và giao tiếp luồng dữ liệu an toàn qua hàng đợi FreeRTOS giữa 2 giao diện mạng W5500.
 
 ```mermaid
 flowchart TB
