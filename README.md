@@ -29,9 +29,8 @@ flowchart TD
         D2 --> D3["Đo khôi phục TCP (n=20),<br/>Mất khung 5-50% & Bền 1 giờ"]
     end
 
-    subgraph G5["Giai đoạn 5: Nghiệm thu, Báo cáo & Slide"]
-        E1["Nghiệm thu 16 mục SW-STD-001<br/>cppcheck + clang-format + deviations"] --> E2["Hoàn thiện Báo cáo Google Docs<br/>Bảng biểu, Đồ thị, Phân tích bảo mật"]
-        E2 --> E3["Soạn 14 Slide thuyết trình<br/>Speaker Notes + Kịch bản Q&A"]
+    subgraph G5["Giai đoạn 5: Nghiệm thu mã nguồn (16/11 - 20/11)"]
+        E1["Nghiệm thu 16 mục SW-STD-001<br/>cppcheck + clang-format + deviations"]
     end
 
     G1 --> G2 --> G3 --> G4 --> G5
