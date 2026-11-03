@@ -67,30 +67,24 @@ flowchart TD
 Kiến trúc hệ thống được phân lớp nghiêm ngặt, sử dụng 100% bộ nhớ tĩnh và giao tiếp luồng dữ liệu an toàn qua hàng đợi FreeRTOS giữa 2 giao diện mạng W5500.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '15px', 'fontFamily': 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif' }}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '16px', 'fontFamily': 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif' }}}%%
 flowchart TB
-    %% =============================================================
-    %% ĐỊNH NGHĨA FONT CHỮ LỚN & ĐỘ TƯƠNG PHẢN CAO
-    %% =============================================================
-    classDef default font-size:15px,color:#F8FAFC;
-    classDef taskClass    fill:#1E293B,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC,font-size:15px;
-    classDef queueClass   fill:#0F172A,stroke:#94A3B8,stroke-width:2px,color:#38BDF8,font-size:15px;
-    classDef serviceClass fill:#064E3B,stroke:#34D399,stroke-width:2px,color:#F0FDF4,font-size:15px;
-    classDef bspClass     fill:#451A03,stroke:#FBBF24,stroke-width:2px,color:#FFFBEB,font-size:15px;
-    classDef hwClass      fill:#18181B,stroke:#A1A1AA,stroke-width:2px,color:#F4F4F5,font-size:15px;
+    classDef default font-size:16px;
+    classDef taskClass    fill:#1E293B,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC,font-size:16px;
+    classDef queueClass   fill:#0F172A,stroke:#94A3B8,stroke-width:2px,color:#38BDF8,font-size:16px;
+    classDef serviceClass fill:#064E3B,stroke:#34D399,stroke-width:2px,color:#F0FDF4,font-size:16px;
+    classDef bspClass     fill:#451A03,stroke:#FBBF24,stroke-width:2px,color:#FFFBEB,font-size:16px;
+    classDef hwClass      fill:#18181B,stroke:#A1A1AA,stroke-width:2px,color:#F4F4F5,font-size:16px;
 
-    %% =============================================================
-    %% TẦNG 1: TASKS & QUEUES
-    %% =============================================================
     subgraph L1[" Layer 1: FreeRTOS Tasks & Queues "]
         direction TB
-        RXA["<b>rx_net_a_task</b><br/>(Prio 4, Stack 256W)"]
-        RXB["<b>rx_net_b_task</b><br/>(Prio 4, Stack 256W)"]
-        QRX[["<b>s_rx_queue</b><br/>(Static Queue)"]]
-        CRYPTO["<b>crypto_task</b><br/>(Prio 2, Stack 512W)"]
-        QTX[["<b>s_tx_queue</b><br/>(Static Queue)"]]
-        TX["<b>tx_task</b><br/>(Prio 3, Stack 256W)"]
-        HB["<b>heartbeat_task</b><br/>(Prio 1, Stack 192W)"]
+        RXA["rx_net_a_task<br/>(Prio 4, Stack 256W)"]
+        RXB["rx_net_b_task<br/>(Prio 4, Stack 256W)"]
+        QRX[["s_rx_queue (Static)"]]
+        CRYPTO["crypto_task<br/>(Prio 2, Stack 512W)"]
+        QTX[["s_tx_queue (Static)"]]
+        TX["tx_task<br/>(Prio 3, Stack 256W)"]
+        HB["heartbeat_task<br/>(Prio 1, Stack 192W)"]
 
         RXA & RXB --> QRX
         QRX --> CRYPTO
@@ -98,39 +92,30 @@ flowchart TB
         QTX --> TX
     end
 
-    %% =============================================================
-    %% TẦNG 2: SERVICES
-    %% =============================================================
     subgraph L2[" Layer 2: Functional Services "]
         direction LR
-        POOL[("<b>buffer_pool</b><br/>(10 x 550B Static)")]
-        CS["<b>crypto_service</b><br/>(AES-128-CBC)"]
-        CODEC["<b>frame_codec</b><br/>([len][IV][data])"]
+        POOL[("buffer_pool<br/>(10 x 550B Static)")]
+        CS["crypto_service<br/>(AES-128-CBC)"]
+        CODEC["frame_codec<br/>([len][IV][data])"]
     end
 
-    %% =============================================================
-    %% TẦNG 3: BSP
-    %% =============================================================
     subgraph L3[" Layer 3: Board Support Package (BSP) "]
         direction LR
-        WIZ["<b>bsp_w5500</b><br/>(Dual W5500, Mutex)"]
-        SPI["<b>bsp_spi</b><br/>(SPI1/2 DMA)"]
-        DIAG["<b>bsp_dwt & watchdog</b><br/>(IWDG 500ms, DWT)"]
+        WIZ["bsp_w5500<br/>(Dual W5500, Mutex)"]
+        SPI["bsp_spi<br/>(SPI1/2 DMA)"]
+        DIAG["bsp_dwt & bsp_watchdog<br/>(IWDG 500ms, DWT)"]
 
         WIZ --> SPI
     end
 
-    %% =============================================================
-    %% TẦNG 4: DRIVERS & HARDWARE
-    %% =============================================================
     subgraph L4[" Layer 4: Drivers & Hardware "]
         direction LR
-        HAL["<b>Vendor HAL & FreeRTOS</b>"]
-        HW["<b>STM32F103 MCU + Dual W5500</b>"]
+        HAL["Vendor HAL & FreeRTOS Kernel"]
+        HW["STM32F103 MCU + 2x W5500"]
         HAL --> HW
     end
 
-    %% Giao tiếp liên tầng
+    %% Giao tiếp giữa các tầng (gọn gàng, không bị chồng chéo)
     L1 -.->|"Acquire / Release"| POOL
     CRYPTO -->|"Encrypt / Pack"| CS & CODEC
     RXA & RXB & TX <-->|"Read / Write Socket"| WIZ
