@@ -1,39 +1,60 @@
 ## 1. Sơ đồ khối Lộ trình triển khai (Project Workflow)
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#EBF3FC', 'primaryBorderColor': '#2B70C9', 'primaryTextColor': '#1F2937', 'lineColor': '#2B70C9', 'secondaryColor': '#F3F4F6', 'tertiaryColor': '#FFFFFF'}}}%%
-flowchart LR
-    classDef stepNode fill:#FFFFFF,stroke:#93C5FD,stroke-width:1.5px,color:#1E293B,font-size:12px;
-    classDef stageGroup fill:#F8FAFC,stroke:#3B82F6,stroke-width:1.5px,stroke-dasharray: 4 3,color:#1D4ED8,font-weight:bold,font-size:13px;
+flowchart TD
+    %% =============================================================
+    %% STYLING / PALETTE (Tối đa 3 màu, phong cách Open-source)
+    %% =============================================================
+    classDef stepClass      fill:#F8FAFC,stroke:#334155,stroke-width:1.2px,color:#0F172A;
+    classDef highlightClass fill:#EFF6FF,stroke:#2563EB,stroke-width:1.5px,color:#1E3A8A;
+    classDef finalizeClass  fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B;
 
-    subgraph G1["Giai đoạn 1: Khởi tạo & Chuẩn hóa"]
-        A1["Cấu hình CubeMX (.ioc)<br/>SPI, DMA, EXTI, RTOS"] --> A2["Cây thư mục SW-STD-001<br/>App, BSP, Services, Tasks"]
-        A2 --> A3["Thiết lập Tooling<br/>.clang-format, GCC flags"]
+    %% =============================================================
+    %% CÁC GIAI ĐOẠN TRIỂN KHAI (5 PHASES)
+    %% =============================================================
+    subgraph G1["Phase 1: Khởi tạo & Chuẩn hóa cấu trúc"]
+        direction TB
+        A1["Cấu hình CubeMX (.ioc)<br/>• SPI1/2, DMA, EXTI, IWDG, FreeRTOS"] --> A2["Dựng cây thư mục SW-STD-001<br/>• App, BSP, Services, Tasks, Common, Config"]
+        A2 --> A3["Thiết lập công cụ chuẩn hóa<br/>• .clang-format, .gitignore, GCC Warnings"]
     end
 
-    subgraph G2["Giai đoạn 2: Services & Test PC"]
-        B1["buffer_pool.c/h<br/>10 Buffers x 550B"] --> B2["crypto_service & codec<br/>PKCS#7, AES-128-CBC"]
-        B2 --> B3["Unit Test trên PC<br/>MinGW vs PyCryptodome"]
+    subgraph G2["Phase 2: Tầng Services & Unit Test trên PC"]
+        direction TB
+        B1["Triển khai buffer_pool.c/.h<br/>• 10 Static Buffers x 550B"] --> B2["Triển khai crypto_service & frame_codec<br/>• PKCS#7, xorshift32 IV, AES-128-CBC"]
+        B2 --> B3["Chạy Unit Test trên PC (MinGW)<br/>• Đối chiếu tính đúng đắn với PyCryptodome"]
     end
 
-    subgraph G3["Giai đoạn 3: BSP & FreeRTOS"]
-        C1["Viết bsp_spi, w5500, dwt<br/>SPI DMA, s_wiz_mutex"] --> C2["Tạo 5 Tasks tĩnh<br/>RX_A/B, Crypto, TX, HB"]
-        C2 --> C3["Ghép 2 module W5500<br/>Kiểm thử mã hóa 2 chiều"]
+    subgraph G3["Phase 3: Tầng BSP & Tích hợp FreeRTOS"]
+        direction TB
+        C1["Triển khai bsp_spi, bsp_w5500, bsp_dwt<br/>• SPI DMA, s_wiz_mutex, Backup Socket"] --> C2["Tạo 5 Tasks cấp phát tĩnh<br/>• RX_A, RX_B, Crypto, TX, Heartbeat"]
+        C2 --> C3["Ghép nối 2 module W5500<br/>• Kiểm thử truyền nhận mã hóa 2 chiều"]
     end
 
-    subgraph G4["Giai đoạn 4: Thực nghiệm & Đo kiểm"]
-        D1["Đo chu kỳ DWT<br/>Payload 64B - 512B"] --> D2["Đo thông lượng mạng<br/>TCP/UDP & Wireshark"]
-        D2 --> D3["Stress-test 1 giờ &<br/>Mất khung 5% - 50%"]
+    subgraph G4["Phase 4: Thực nghiệm & Đo kiểm"]
+        direction TB
+        D1["Đo thời gian mã hóa DWT<br/>• Khảo sát Payload 64B, 128B, 256B, 512B"] --> D2["Đo thông lượng TCP & UDP<br/>• Tốc độ 50 gói/giây + Giám sát Wireshark"]
+        D2 --> D3["Đo độ tin cậy đường truyền<br/>• Phục hồi TCP (n=20), Mất khung 5-50%, Bền 1h"]
     end
 
-    subgraph G5["Giai đoạn 5: Nghiệm thu"]
-        E1["Nghiệm thu SW-STD-001<br/>16 mục + cppcheck + audit"]
+    subgraph G5["Phase 5: Nghiệm thu mã nguồn"]
+        direction TB
+        E1["Nghiệm thu 16 tiêu chí SW-STD-001<br/>• Static Analysis (cppcheck)<br/>• Formatting (clang-format)<br/>• Danh mục giải trình ngoại lệ (Deviations)"]
     end
 
-    G1 ==> G2 ==> G3 ==> G4 ==> G5
+    %% =============================================================
+    %% LIÊN KẾT TUẦN TỰ GIỮA CÁC GIAI ĐOẠN
+    %% =============================================================
+    G1 -->|"Hoàn tất Base Project"| G2
+    G2 -->|"Services được kiểm chứng"| G3
+    G3 -->|"Hệ thống tích hợp ổn định"| G4
+    G4 -->|"Số liệu đo đạt chuẩn"| G5
 
-    class A1,A2,A3,B1,B2,B3,C1,C2,C3,D1,D2,D3,E1 stepNode;
-    class G1,G2,G3,G4,G5 stageGroup;
+    %% =============================================================
+    %% GÁN CLASS STYLE
+    %% =============================================================
+    class A1,A2,A3,B1,B2,C1,C2 stepClass;
+    class B3,C3,D1,D2,D3 highlightClass;
+    class E1 finalizeClass;
 ```
 
 ---
