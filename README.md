@@ -64,13 +64,13 @@ flowchart TB
     classDef bspClass     fill:#451A03,stroke:#FBBF24,stroke-width:2px,color:#FFFBEB;
     classDef hwClass      fill:#18181B,stroke:#94A3B8,stroke-width:2px,color:#F4F4F5;
 
-    subgraph L1[" Layer 1: FreeRTOS Tasks & Queues   "]
+    subgraph L1[" Layer 1: FreeRTOS Tasks & Queues "]
         direction TB
-        subgraph Pipeline[" Pipeline truyền nhận và mã hóa gói tin "]
+        subgraph Pipeline[" Pipeline truyền nhận và mã hóa/giải mã hai chiều "]
             direction LR
             RX["<b>rx_net_a / b_task</b><br/>(Prio 4, 256W)"]
             QRX[["<b>s_rx_queue</b><br/>(Static)"]]
-            CRYPTO["<b>crypto_task</b><br/>(Prio 2, 512W)"]
+            CRYPTO["<b>crypto_task</b><br/>(Prio 3, 512W)"]
             QTX[["<b>s_tx_queue</b><br/>(Static)"]]
             TX["<b>tx_task</b><br/>(Prio 3, 256W)"]
 
@@ -79,14 +79,14 @@ flowchart TB
         HB["<b>heartbeat_task</b><br/>(Prio 1, Stack 192W)"]
     end
 
-    subgraph L2[" Layer 2: Functional Services   "]
+    subgraph L2[" Layer 2: Functional Services "]
         direction LR
         POOL[("<b>buffer_pool</b><br/>10 x 550B Static")]
         CS["<b>crypto_service</b><br/>PKCS#7, AES-128-CBC"]
-        CODEC["<b>frame_codec</b><br/>[len][IV 16B][data]"]
+        CODEC["<b>frame_codec</b><br/>[len][IV 16B][ciphertext]"]
     end
 
-    subgraph L3[" Layer 3: Board Support Package (BSP)   "]
+    subgraph L3[" Layer 3: Board Support Package (BSP) "]
         direction LR
         WIZ["<b>bsp_w5500</b><br/>Dual W5500 & Mutex"]
         SPI["<b>bsp_spi</b><br/>SPI1/2 DMA Engine"]
@@ -95,19 +95,20 @@ flowchart TB
         WIZ --> SPI
     end
 
-    subgraph L4[" Layer 4: Drivers & Hardware   "]
+    subgraph L4[" Layer 4: Drivers & Hardware "]
         direction LR
-        HAL["<b>Vendor HAL & FreeRTOS Kernel</b>"]
+        HAL["<b>STM32F1 HAL & CMSIS</b>"]
         HW["<b>STM32F103 MCU + 2x W5500 Modules</b>"]
 
         HAL --> HW
     end
 
-    %% Liên kết giữa các tầng gọn gàng, không bị chồng chéo nhãn
-    Pipeline ==>|"Xin & Trả Static Buffer"| POOL
-    CRYPTO -->|"Mã hóa & Đóng gói"| CS & CODEC
-    RX & TX <-->|"Đọc / Ghi Socket"| WIZ
-    HB -->|"Kick Watchdog"| DIAG
+    CRYPTO -->|"Mã hóa/Giải mã"| CS
+    CRYPTO -->|"Đóng/Tách khung"| CODEC
+    RX & CRYPTO & TX -.->|"Xin & Trả Buffer"| POOL
+    RX <--|"Đọc gói tin"| WIZ
+    TX -->|"Ghi gói tin"| WIZ
+    HB -->|"Giám sát & Kick IWDG"| DIAG
     SPI & DIAG --> HAL
 
     class RX,CRYPTO,TX,HB taskClass;
