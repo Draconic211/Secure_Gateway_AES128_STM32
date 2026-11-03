@@ -12,31 +12,31 @@ flowchart TD
     classDef highlightClass fill:#DBEAFE,stroke:#1D4ED8,stroke-width:2px,color:#1E3A8A,font-weight:600;
     classDef finalizeClass  fill:#DCFCE7,stroke:#15803D,stroke-width:2px,color:#14532D,font-weight:600;
 
-    subgraph G1[" Phase 1: Cấu hình & Chuẩn hóa   "]
+    subgraph G1["Phase 1: Khởi tạo & Chuẩn hóa &nbsp;&nbsp;&nbsp;&nbsp;"]
         direction LR
         A1["<b>Cấu hình CubeMX (.ioc)</b><br/>SPI1/2, DMA, EXTI, IWDG, RTOS"] --> A2["<b>Dựng cây thư mục SW-STD-001</b><br/>App, BSP, Services, Tasks, Config"]
         A2 --> A3["<b>Thiết lập công cụ</b><br/>.clang-format, .gitignore, Warnings"]
     end
 
-    subgraph G2[" Phase 2: Services & Unit Test PC   "]
+    subgraph G2["Phase 2: Services & Test PC &nbsp;&nbsp;&nbsp;&nbsp;"]
         direction LR
         B1["<b>Triển khai buffer_pool</b><br/>10 Static Buffers x 550B"] --> B2["<b>Triển khai crypto & frame</b><br/>PKCS#7, xorshift32 IV, AES-128"]
         B2 --> B3["<b>Unit Test PC (MinGW)</b><br/>Đối chiếu PyCryptodome"]
     end
 
-    subgraph G3[" Phase 3: BSP & Tích hợp RTOS   "]
+    subgraph G3["Phase 3: BSP & RTOS &nbsp;&nbsp;&nbsp;&nbsp;"]
         direction LR
         C1["<b>Triển khai ngoại vi BSP</b><br/>SPI DMA, Mutex, Backup Socket"] --> C2["<b>Tạo 5 Tasks cấp phát tĩnh</b><br/>RX_A, RX_B, Crypto, TX, Heartbeat"]
         C2 --> C3["<b>Ghép nối 2x W5500</b><br/>Kiểm thử mã hóa 2 chiều"]
     end
 
-    subgraph G4[" Phase 4: Thực nghiệm & Đo kiểm   "]
+    subgraph G4["Phase 4: Đo kiểm & Thực nghiệm &nbsp;&nbsp;&nbsp;&nbsp;"]
         direction LR
         D1["<b>Đo thời gian mã hóa DWT</b><br/>Payload 64B đến 512B"] --> D2["<b>Đo thông lượng TCP & UDP</b><br/>50 gói/giây + Wireshark"]
         D2 --> D3["<b>Đo độ tin cậy kết nối</b><br/>Mất khung 5-50%, Bền 1h"]
     end
 
-    subgraph G5[" Phase 5: Nghiệm thu mã nguồn   "]
+    subgraph G5["Phase 5: Nghiệm thu &nbsp;&nbsp;&nbsp;&nbsp;"]
         direction LR
         E1["<b>Nghiệm thu 16 tiêu chí SW-STD-001</b><br/>cppcheck (Static Analysis) • clang-format • Giải trình sai lệch (Deviations)"]
     end
