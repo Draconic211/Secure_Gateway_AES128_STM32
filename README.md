@@ -105,11 +105,14 @@ flowchart TB
 
     CRYPTO -->|"Mã hóa/Giải mã"| CS
     CRYPTO -->|"Đóng/Tách khung"| CODEC
-    RX & CRYPTO & TX -.->|"Xin & Trả Buffer"| POOL
-    RX <--|"Đọc gói tin"| WIZ
+    RX -.->|"Xin & Trả Buffer"| POOL
+    CRYPTO -.-> POOL
+    TX -.-> POOL
+    WIZ -->|"Đọc gói tin"| RX
     TX -->|"Ghi gói tin"| WIZ
     HB -->|"Giám sát & Kick IWDG"| DIAG
-    SPI & DIAG --> HAL
+    SPI --> HAL
+    DIAG --> HAL
 
     class RX,CRYPTO,TX,HB taskClass;
     class QRX,QTX queueClass;
