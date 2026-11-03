@@ -116,7 +116,7 @@ flowchart TB
 
 ## 3. Project Structure
 
-Cấu trúc cây thư mục tuân thủ bộ quy tắc SW-STD-001[cite: 1]:
+Cấu trúc cây thư mục:
 
 ```text
 ├── App/                                  # Tầng ứng dụng cấp cao và điểm khởi chạy hệ thống
