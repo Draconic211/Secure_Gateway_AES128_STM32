@@ -6,44 +6,56 @@ Quy trình phát triển và hoàn thiện hệ thống gồm 5 giai đoạn tu�
 
 ```mermaid
 flowchart TD
+    %% =============================================================
+    %% STYLING / PALETTE (Tối ưu Dark/Light Mode)
+    %% =============================================================
     classDef stepClass      fill:#F8FAFC,stroke:#334155,stroke-width:1.2px,color:#0F172A;
     classDef highlightClass fill:#EFF6FF,stroke:#2563EB,stroke-width:1.5px,color:#1E3A8A;
     classDef finalizeClass  fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B;
 
+    %% =============================================================
+    %% CÁC GIAI ĐOẠN TRIỂN KHAI (DÀN HÀNG NGANG BÊN TRONG MỖI PHASE)
+    %% =============================================================
     subgraph G1["Phase 1: Khởi tạo & Chuẩn hóa cấu trúc"]
-        direction TB
+        direction LR
         A1["Cấu hình CubeMX (.ioc)<br/>• SPI1/2, DMA, EXTI, IWDG, FreeRTOS"] --> A2["Dựng cây thư mục SW-STD-001<br/>• App, BSP, Services, Tasks, Common, Config"]
         A2 --> A3["Thiết lập công cụ chuẩn hóa<br/>• .clang-format, .gitignore, GCC Warnings"]
     end
 
     subgraph G2["Phase 2: Tầng Services & Unit Test trên PC"]
-        direction TB
+        direction LR
         B1["Triển khai buffer_pool.c/.h<br/>• 10 Static Buffers x 550B"] --> B2["Triển khai crypto_service & frame_codec<br/>• PKCS#7, xorshift32 IV, AES-128-CBC"]
         B2 --> B3["Chạy Unit Test trên PC (MinGW)<br/>• Đối chiếu tính đúng đắn với PyCryptodome"]
     end
 
     subgraph G3["Phase 3: Tầng BSP & Tích hợp FreeRTOS"]
-        direction TB
+        direction LR
         C1["Triển khai bsp_spi, bsp_w5500, bsp_dwt<br/>• SPI DMA, s_wiz_mutex, Backup Socket"] --> C2["Tạo 5 Tasks cấp phát tĩnh<br/>• RX_A, RX_B, Crypto, TX, Heartbeat"]
         C2 --> C3["Ghép nối 2 module W5500<br/>• Kiểm thử truyền nhận mã hóa 2 chiều"]
     end
 
     subgraph G4["Phase 4: Thực nghiệm & Đo kiểm"]
-        direction TB
+        direction LR
         D1["Đo thời gian mã hóa DWT<br/>• Khảo sát Payload 64B, 128B, 256B, 512B"] --> D2["Đo thông lượng TCP & UDP<br/>• Tốc độ 50 gói/giây + Giám sát Wireshark"]
         D2 --> D3["Đo độ tin cậy đường truyền<br/>• Phục hồi TCP (n=20), Mất khung 5-50%, Bền 1h"]
     end
 
     subgraph G5["Phase 5: Nghiệm thu mã nguồn"]
-        direction TB
+        direction LR
         E1["Nghiệm thu 16 tiêu chí SW-STD-001<br/>• Static Analysis (cppcheck)<br/>• Formatting (clang-format)<br/>• Danh mục giải trình ngoại lệ (Deviations)"]
     end
 
+    %% =============================================================
+    %% LIÊN KẾT TUẦN TỰ GIỮA CÁC GIAI ĐOẠN
+    %% =============================================================
     G1 -->|"Hoàn tất Base Project"| G2
     G2 -->|"Services được kiểm chứng"| G3
     G3 -->|"Hệ thống tích hợp ổn định"| G4
     G4 -->|"Số liệu đo đạt chuẩn"| G5
 
+    %% =============================================================
+    %% GÁN CLASS STYLE
+    %% =============================================================
     class A1,A2,A3,B1,B2,C1,C2 stepClass;
     class B3,C3,D1,D2,D3 highlightClass;
     class E1 finalizeClass;
