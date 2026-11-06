@@ -217,7 +217,7 @@ Tổng số byte truyền: 2 + 544 = 546 B
 Với TCP, dữ liệu nhận được có thể bị chia hoặc gộp tùy ý, nên phải tích lũy dữ liệu cho đến khi nhận đủ `2 + len` byte rồi mới giải mã. Nếu quá 5000 ms vẫn không đủ, hủy frame dở dang.
 
 > Lưu ý bảo mật: `xorshift32` với seed từ tick chỉ phù hợp minh họa/kiểm thử, không đủ an toàn để sinh IV cho hệ thống thật vì IV có thể dự đoán hoặc lặp sau reset. Triển khai thực tế nên dùng nguồn ngẫu nhiên mật mã, hoặc tạo IV bằng một PRF/AES với khóa riêng và bộ đếm không lặp.
-## 5. Trình tự truyền một gói tin
+## 4. Trình tự truyền một gói tin
 
 ```mermaid
 sequenceDiagram
