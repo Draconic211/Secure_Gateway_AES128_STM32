@@ -217,3 +217,68 @@ Tổng số byte truyền: 2 + 544 = 546 B
 Với TCP, dữ liệu nhận được có thể bị chia hoặc gộp tùy ý, nên phải tích lũy dữ liệu cho đến khi nhận đủ `2 + len` byte rồi mới giải mã. Nếu quá 5000 ms vẫn không đủ, hủy frame dở dang.
 
 > Lưu ý bảo mật: `xorshift32` với seed từ tick chỉ phù hợp minh họa/kiểm thử, không đủ an toàn để sinh IV cho hệ thống thật vì IV có thể dự đoán hoặc lặp sau reset. Triển khai thực tế nên dùng nguồn ngẫu nhiên mật mã, hoặc tạo IV bằng một PRF/AES với khóa riêng và bộ đếm không lặp.
+## 5. Trình tự truyền một gói tin
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor NetA as Máy gửi — Mạng A
+    participant W5500_A as W5500 #1 / SPI1
+    participant ISR as EXTI2_IRQHandler
+    participant RX1 as rx_spi1_task / Priority 4
+    participant PROC as packet_proc_task / Priority 3
+    participant TX as tx_task / Priority 3
+    participant W5500_B as W5500 #2 / SPI2
+    actor NetB as Máy nhận — Mạng B
+
+    NetA->>W5500_A: TCP/UDP plaintext, tối đa 512 B
+    W5500_A->>ISR: INTn kéo LOW, tạo falling edge
+    ISR->>RX1: vTaskNotifyGiveFromISR()
+    ISR->>ISR: portYIELD_FROM_ISR() nếu cần
+
+    activate RX1
+    RX1->>RX1: Lấy buffer_idx từ Static Buffer Pool
+    RX1->>RX1: xSemaphoreTake(s_wiz_mutex)
+    RX1->>W5500_A: Đọc dữ liệu qua SPI1 + DMA
+    W5500_A-->>RX1: Plaintext
+    RX1->>RX1: Xóa nguồn ngắt W5500 và nhả mutex
+    RX1->>PROC: xQueueSend(s_rx_queue, buffer_idx)
+    deactivate RX1
+
+    activate PROC
+    PROC->>PROC: PKCS#7 padding
+    PROC->>PROC: Sinh IV 16 B mới cho frame
+    PROC->>PROC: AES-128-CBC encrypt in-place
+    PROC->>PROC: Đóng gói [len][IV][ciphertext]
+    PROC->>TX: xQueueSend(s_tx_queue, buffer_idx)
+    deactivate PROC
+
+    activate TX
+    TX->>TX: xSemaphoreTake(s_wiz_mutex)
+    TX->>W5500_B: send/sendto qua SPI2 + DMA
+    W5500_B-->>TX: Kết quả gửi
+    TX->>TX: xSemaphoreGive(s_wiz_mutex)
+    TX->>TX: Trả buffer_idx về FREE pool
+    deactivate TX
+
+    W5500_B->>NetB: TCP/UDP ciphertext frame
+    NetB->>NetB: Reassembly, decrypt, unpad, kiểm tra CRC
+```
+
+### Quy tắc quan trọng
+
+- ISR chỉ gọi `vTaskNotifyGiveFromISR()` và `portYIELD_FROM_ISR()`; không gọi SPI, mutex, ioLibrary hay AES trong ISR.
+- `s_wiz_mutex` chỉ được take/give trong context task, không dùng trong ISR.
+- Sau khi task xử lý ngắt, phải đọc/xóa nguồn ngắt W5500. Nếu không, `INTn` có thể vẫn giữ LOW và không tạo falling edge mới.
+- Nếu pool hết slot hoặc queue đầy, task phải tăng bộ đếm lỗi và trả buffer đã lấy về pool; không được giữ buffer vô thời hạn.
+- Với TCP, task phải reassembly đủ `2 + len` byte trước khi chuyển frame hoàn chỉnh sang `packet_proc_task`; frame dở quá 5000 ms phải bị hủy.
+
+### Checklist kiến trúc
+
+- [x] Tách lớp: `Tasks → Services → BSP → HAL/Vendor`.
+- [x] Mỗi task có priority, stack và cơ chế kích hoạt xác định.
+- [x] EXTI chỉ đánh thức task, không xử lý dữ liệu nặng trong ISR.
+- [x] Queue chỉ truyền `buffer_idx`, xác định rõ ownership.
+- [x] `s_wiz_mutex` bảo vệ phần ioLibrary/W5500 dùng chung.
+- [x] Đối tượng RTOS và pool cấp phát tĩnh.
+- [x] Theo dõi stack watermark và bật `configCHECK_FOR_STACK_OVERFLOW = 2`.
