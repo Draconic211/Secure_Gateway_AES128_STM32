@@ -1,4 +1,4 @@
-# Sơ đồ khối phần cứng
+# 1. Sơ đồ khối phần cứng
 
 ```mermaid
 graph LR
@@ -38,12 +38,12 @@ graph LR
     PWR -.->|Chung GND| MCU
 ```
 
-## Lý do thiết kế
+## 2. Lý do thiết kế
 
 - Dùng nguồn 3.3 V rời cho hai W5500 vì khi cả hai truyền/nhận, dòng tổng có thể khoảng 300–350 mA.
 - Dùng SPI1 và SPI2 riêng để tách Mạng A và Mạng B ở mức phần cứng.
 - Toàn bộ hệ thống phải dùng chung GND.
-## Kiến trúc phần mềm, FreeRTOS và bộ nhớ
+## 3. Kiến trúc phần mềm, FreeRTOS và bộ nhớ
 
 Phần mềm tuân thủ luồng phân lớp một chiều:
 
@@ -122,7 +122,7 @@ graph TB
     B_UART --> HAL
 ```
 
-### Luồng ownership của buffer
+### 4. Luồng ownership của buffer
 
 ```text
 FREE → RX task → RX queue → packet processing → TX queue → TX task → FREE
@@ -130,7 +130,7 @@ FREE → RX task → RX queue → packet processing → TX queue → TX task →
 
 Queue chỉ chuyển `uint8_t buffer_idx`, không copy toàn bộ payload. Điều này giảm RAM, giảm tải CPU và xác định rõ task đang sở hữu buffer.
 
-### Ước tính SRAM
+### 5. Ước tính SRAM
 
 | Thành phần | Ước tính |
 |---|---:|
@@ -143,7 +143,7 @@ Queue chỉ chuyển `uint8_t buffer_idx`, không copy toàn bộ payload. Đi�
 | **Còn lại** | **~3,272 B** |
 
 > Toàn bộ task, queue, mutex và buffer sử dụng cấp phát tĩnh. Cần bật `configCHECK_FOR_STACK_OVERFLOW = 2` và theo dõi `uxTaskGetStackHighWaterMark()` khi kiểm thử tải cao.
-## 4. Luồng dữ liệu và cấu trúc khung
+## 6. Luồng dữ liệu và cấu trúc khung
 
 ```mermaid
 flowchart LR
