@@ -143,3 +143,77 @@ Queue chỉ chuyển `uint8_t buffer_idx`, không copy toàn bộ payload. Đi�
 | **Còn lại** | **~3,272 B** |
 
 > Toàn bộ task, queue, mutex và buffer sử dụng cấp phát tĩnh. Cần bật `configCHECK_FOR_STACK_OVERFLOW = 2` và theo dõi `uxTaskGetStackHighWaterMark()` khi kiểm thử tải cao.
+## 4. Luồng dữ liệu và cấu trúc khung
+
+```mermaid
+flowchart LR
+    subgraph SENDER["1. Máy gửi — Mạng A hoặc B"]
+        P_IN["Plaintext<br/>1 đến 512 B<br/>Kèm CRC kiểm thử"]
+    end
+
+    subgraph STM32["2. STM32 Gateway"]
+        direction TB
+        PAD["1. PKCS#7 padding<br/>16 đến 528 B"]
+        IV_GEN["2. Sinh IV 16 B mới<br/>cho mỗi frame"]
+        AES_ENC["3. AES-128-CBC<br/>Mỗi chiều dùng khóa riêng<br/>Key_AB hoặc Key_BA"]
+        PACK["4. Đóng gói frame, tối đa 546 B<br/>[len_hi][len_lo][IV 16 B][ciphertext]<br/>len = 16 + ciphertext length"]
+
+        PAD --> AES_ENC
+        IV_GEN --> AES_ENC
+        AES_ENC --> PACK
+    end
+
+    subgraph RECEIVER["3. Máy nhận — Mạng B hoặc A"]
+        direction TB
+        UNPACK["5. TCP reassembly và tách frame<br/>Đọc length 2 B, IV và ciphertext"]
+        AES_DEC["6. AES-128-CBC decrypt<br/>Gỡ PKCS#7 padding<br/>Kiểm tra CRC"]
+        P_OUT["Khôi phục plaintext gốc"]
+
+        UNPACK --> AES_DEC --> P_OUT
+    end
+
+    P_IN ==>|TCP/UDP plaintext| PAD
+    PACK ==>|W5500 đích: ciphertext + IV| UNPACK
+```
+
+### PKCS#7 padding
+
+AES-128-CBC chỉ xử lý dữ liệu có độ dài là bội số của 16 byte.
+
+```text
+P = 16 - (L mod 16)
+```
+
+Mỗi byte padding có giá trị bằng `P`.
+
+Ví dụ, với plaintext dài 512 B:
+
+```text
+512 mod 16 = 0
+P = 16
+
+Ciphertext = 512 + 16 = 528 B
+Frame = 2 B length + 16 B IV + 528 B ciphertext = 546 B
+```
+
+Dù plaintext đã chia hết cho 16, PKCS#7 vẫn phải thêm cả một block `0x10` gồm 16 byte. Điều này giúp đầu nhận luôn xác định được padding khi giải mã.
+
+### Cấu trúc frame
+
+| Thành phần | Kích thước | Mục đích |
+|---|---:|---|
+| `len_hi`, `len_lo` | 2 B | Độ dài Big-Endian của `IV + ciphertext`. |
+| `IV` | 16 B | IV riêng của frame hiện tại. |
+| `ciphertext` | 16–528 B | Plaintext đã được AES-128-CBC và PKCS#7 xử lý. |
+
+Với frame lớn nhất:
+
+```text
+len = 16 + 528 = 544 = 0x0220
+Bytes đầu frame: 0x02 0x20
+Tổng số byte truyền: 2 + 544 = 546 B
+```
+
+Với TCP, dữ liệu nhận được có thể bị chia hoặc gộp tùy ý, nên phải tích lũy dữ liệu cho đến khi nhận đủ `2 + len` byte rồi mới giải mã. Nếu quá 5000 ms vẫn không đủ, hủy frame dở dang.
+
+> Lưu ý bảo mật: `xorshift32` với seed từ tick chỉ phù hợp minh họa/kiểm thử, không đủ an toàn để sinh IV cho hệ thống thật vì IV có thể dự đoán hoặc lặp sau reset. Triển khai thực tế nên dùng nguồn ngẫu nhiên mật mã, hoặc tạo IV bằng một PRF/AES với khóa riêng và bộ đếm không lặp.
