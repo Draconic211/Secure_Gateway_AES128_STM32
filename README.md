@@ -2,7 +2,7 @@
 
 ```mermaid
 graph LR
-    subgraph PC["Máy tính Windows 11 (Kiểm thử & Giám sát)"]
+    subgraph PC["Máy tính (Kiểm thử & Giám sát)"]
         NIC_A["Card mạng #1 (Mạng A)<br/>IP: 192.168.10.10/24"]
         NIC_B["Card mạng #2 (Mạng B)<br/>IP: 192.168.20.10/24"]
         USB_DBG["Cổng USB<br/>(ST-Link V2 & USB-to-TTL)"]
